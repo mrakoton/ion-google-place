@@ -16,6 +16,7 @@ angular.module('ion-google-place', [])
                 scope: {
                     ngModel: '=?',
                     geocodeOptions: '=',
+                    searchQuery: '=',
                     currentLocation: '@'
                 },
                 link: function(scope, element, attrs, ngModel) {
@@ -25,12 +26,25 @@ angular.module('ion-google-place', [])
                     var geocoder = new google.maps.Geocoder();
                     var searchEventTimeout = undefined;
 
+                    if(scope.searchQuery) {
+                        var req = scope.geocodeOptions || {};
+                        req.address = scope.searchQuery;
+                    
+                        geocoder.geocode(req, function(results, status) {
+                            if (status == google.maps.GeocoderStatus.OK) {
+                                ngModel.$setViewValue(angular.copy(results[0]));
+                                ngModel.$render();
+                            }
+                        });
+                    }
+
                     scope.displayCurrentLocation = false;
                     scope.currentLocation = scope.currentLocation === "true"? true:false;
                     
                     if(!!navigator.geolocation && scope.currentLocation){
                         scope.displayCurrentLocation = true;
                     }
+
                     var POPUP_TPL = [
                         '<div class="ion-google-place-container modal">',
                             '<div class="bar bar-header item-input-inset">',
@@ -45,7 +59,7 @@ angular.module('ion-google-place', [])
                             '<ion-content class="has-header has-header">',
                                 '<ion-list>',
                                     '<ion-item type="item-text-wrap" ng-click="setCurrentLocation()" ng-if="displayCurrentLocation">',
-                                        'Use current location',
+                                        attrs.labelCurrentLocation || 'Use current location',
                                     '</ion-item>',
                                     '<ion-item ng-repeat="location in locations" type="item-text-wrap" ng-click="selectLocation(location)">',
                                         '{{location.formatted_address}}',
